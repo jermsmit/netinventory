@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NetInventory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0d1117;
+    --surface:  #161b22;
+    --border:   #21262d;
+    --border2:  #30363d;
+    --green:    #3fb950;
+    --green-dim:#1a4228;
+    --red:      #f85149;
+    --red-dim:  #3d1a1a;
+    --yellow:   #e3b341;
+    --blue:     #58a6ff;
+    --purple:   #bc8cff;
+    --text:     #e6edf3;
+    --muted:    #8b949e;
+    --dimmer:   #484f58;
+    --accent:   #238636;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+
+  .logo-icon {
+    width: 28px; height: 28px;
+    background: var(--green);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .logo-icon svg { width: 16px; height: 16px; }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .subnet-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    background: var(--border);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 4px 10px;
+    color: var(--blue);
+  }
+
+  .scan-btn {
+    background: var(--accent);
+    border: 1px solid #2ea043;
+    color: #fff;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    transition: background 0.15s, opacity 0.15s;
+  }
+  .scan-btn:hover  { background: #2ea043; }
+  .scan-btn:active { opacity: 0.8; }
+  .scan-btn.scanning { opacity: 0.6; cursor: not-allowed; }
+
+  .scan-btn .spinner {
+    width: 12px; height: 12px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    display: none;
+    animation: spin 0.6s linear infinite;
+  }
+  .scan-btn.scanning .spinner { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Main layout ── */
+  main { padding: 24px; max-width: 1400px; margin: 0 auto; }
+
+  /* ── Stat cards ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .stat-card.green::before  { background: var(--green); }
+  .stat-card.red::before    { background: var(--red); }
+  .stat-card.blue::before   { background: var(--blue); }
+  .stat-card.yellow::before { background: var(--yellow); }
+
+  .stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1;
+  }
+  .stat-card.green  .stat-value { color: var(--green); }
+  .stat-card.red    .stat-value { color: var(--red); }
+  .stat-card.blue   .stat-value { color: var(--blue); }
+  .stat-card.yellow .stat-value { color: var(--yellow); }
+
+  .stat-sub {
+    font-size: 11px;
+    color: var(--dimmer);
+    margin-top: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ── Section headers ── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+  }
+
+  /* ── Filter bar ── */
+  .filter-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .filter-bar input {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    padding: 7px 12px;
+    outline: none;
+    flex: 1;
+    min-width: 200px;
+    transition: border-color 0.15s;
+  }
+  .filter-bar input:focus { border-color: var(--blue); }
+  .filter-bar input::placeholder { color: var(--dimmer); }
+
+  .filter-btn {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .filter-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .filter-btn.active { background: #1c2d3f; border-color: var(--blue); color: var(--blue); }
+
+  /* ── Host table ── */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead th {
+    background: var(--bg);
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+  thead th:hover { color: var(--text); }
+  thead th .sort-arrow { margin-left: 4px; opacity: 0.4; }
+  thead th.sorted .sort-arrow { opacity: 1; color: var(--blue); }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+  td {
+    padding: 11px 16px;
+    vertical-align: middle;
+  }
+
+  /* Status dot */
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .status-dot.online  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status-dot.offline { background: var(--dimmer); }
+
+  .status-cell {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .status-text { font-size: 12px; }
+  .status-text.online  { color: var(--green); }
+  .status-text.offline { color: var(--dimmer); }
+
+  /* IP */
+  .ip-cell {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  /* MAC */
+  .mac-cell {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.3px;
+  }
+
+  /* Hostname */
+  .hostname-cell {
+    font-size: 13px;
+    color: var(--blue);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .hostname-cell.empty { color: var(--dimmer); font-style: italic; }
+
+  /* Vendor */
+  .vendor-cell {
+    font-size: 12px;
+    color: var(--purple);
+  }
+  .vendor-cell.unknown { color: var(--dimmer); }
+
+  /* Ports */
+  .ports-cell {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    max-width: 280px;
+  }
+  .port-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    background: var(--border);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    padding: 2px 6px;
+    color: var(--yellow);
+    white-space: nowrap;
+  }
+
+  /* Timestamp */
+  .time-cell {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--dimmer);
+    white-space: nowrap;
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .empty-state .icon { font-size: 40px; margin-bottom: 12px; opacity: 0.4; }
+  .empty-state p { font-size: 14px; }
+  .empty-state small { font-size: 12px; color: var(--dimmer); margin-top: 6px; display: block; }
+
+  /* Last scan info */
+  .last-scan-bar {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--dimmer);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .last-scan-bar .dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.3; }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .hide-sm { display: none !important; }
+    main { padding: 16px; }
+  }
+  @media (max-width: 600px) {
+    .hide-xs { display: none !important; }
+    header { padding: 0 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 16 16" fill="none" stroke="#0d1117" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="8" cy="8" r="2"/>
+        <circle cx="2" cy="4" r="1.2"/>
+        <circle cx="14" cy="4" r="1.2"/>
+        <circle cx="2" cy="12" r="1.2"/>
+        <circle cx="14" cy="12" r="1.2"/>
+        <line x1="3.2" y1="4" x2="6" y2="7"/>
+        <line x1="12.8" y1="4" x2="10" y2="7"/>
+        <line x1="3.2" y1="12" x2="6" y2="9"/>
+        <line x1="12.8" y1="12" x2="10" y2="9"/>
+      </svg>
+    </div>
+    NetInventory
+  </div>
+  <div class="header-right">
+    <span class="subnet-badge" id="subnet-badge">—</span>
+    <button class="scan-btn" id="scan-btn" onclick="triggerScan()">
+      <div class="spinner"></div>
+      <span class="label">Scan Now</span>
+    </button>
+  </div>
+</header>
+
+<main>
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card green">
+      <div class="stat-label">Online</div>
+      <div class="stat-value" id="stat-online">—</div>
+      <div class="stat-sub">hosts responding</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-label">Offline</div>
+      <div class="stat-value" id="stat-offline">—</div>
+      <div class="stat-sub">no response</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-label">Total Seen</div>
+      <div class="stat-value" id="stat-total">—</div>
+      <div class="stat-sub">ever discovered</div>
+    </div>
+    <div class="stat-card yellow">
+      <div class="stat-label">Scan Interval</div>
+      <div class="stat-value" id="stat-interval">—</div>
+      <div class="stat-sub">seconds</div>
+    </div>
+  </div>
+
+  <!-- Last scan -->
+  <div class="last-scan-bar">
+    <div class="dot"></div>
+    <span id="last-scan-info">Loading...</span>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <input type="text" id="search" placeholder="Search IP, hostname, vendor, MAC…" oninput="renderTable()">
+    <button class="filter-btn active" id="btn-all"     onclick="setFilter('all')">All</button>
+    <button class="filter-btn"        id="btn-online"  onclick="setFilter('online')">Online</button>
+    <button class="filter-btn"        id="btn-offline" onclick="setFilter('offline')">Offline</button>
+  </div>
+
+  <!-- Table -->
+  <div class="section-header">
+    <span class="section-title">Host Inventory</span>
+    <span class="section-title" id="host-count" style="color:var(--dimmer)"></span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortBy('online')"   id="th-online">Status<span class="sort-arrow">↕</span></th>
+          <th onclick="sortBy('ip')"       id="th-ip"    >IP Address<span class="sort-arrow">↕</span></th>
+          <th onclick="sortBy('hostname')" id="th-hostname" class="hide-xs">Hostname<span class="sort-arrow">↕</span></th>
+          <th onclick="sortBy('vendor')"   id="th-vendor" class="hide-sm">Vendor<span class="sort-arrow">↕</span></th>
+          <th id="th-mac"                  class="hide-sm">MAC Address</th>
+          <th id="th-ports"                class="hide-xs">Open Ports</th>
+          <th onclick="sortBy('last_seen')" id="th-last">Last Seen<span class="sort-arrow">↕</span></th>
+        </tr>
+      </thead>
+      <tbody id="host-tbody">
+        <tr><td colspan="7">
+          <div class="empty-state">
+            <div class="icon">⏳</div>
+            <p>Loading inventory…</p>
+          </div>
+        </td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+let allHosts = [];
+let filterMode = 'all';
+let sortField = 'online';
+let sortAsc = false;
+
+// ── Fetch & render ─────────────────────────────────────────────────────────
+async function fetchData() {
+  try {
+    const [hostsRes, statsRes] = await Promise.all([
+      fetch('/api/hosts'),
+      fetch('/api/stats')
+    ]);
+    allHosts = await hostsRes.json();
+    const stats = await statsRes.json();
+    updateStats(stats);
+    renderTable();
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function updateStats(s) {
+  document.getElementById('stat-online').textContent   = s.online ?? '—';
+  document.getElementById('stat-offline').textContent  = s.offline ?? '—';
+  document.getElementById('stat-total').textContent    = s.total ?? '—';
+  document.getElementById('stat-interval').textContent = s.scan_interval ?? '—';
+  document.getElementById('subnet-badge').textContent  = s.subnet ?? '—';
+
+  if (s.last_scan) {
+    const d = new Date(s.last_scan.scanned_at);
+    document.getElementById('last-scan-info').textContent =
+      `Last scan: ${d.toLocaleString()}  ·  took ${s.last_scan.duration_s}s`;
+  } else {
+    document.getElementById('last-scan-info').textContent = 'No scan data yet — scan in progress…';
+  }
+}
+
+function renderTable() {
+  const query = document.getElementById('search').value.toLowerCase().trim();
+  let hosts = allHosts.slice();
+
+  // Filter
+  if (filterMode === 'online')  hosts = hosts.filter(h => h.online);
+  if (filterMode === 'offline') hosts = hosts.filter(h => !h.online);
+
+  // Search
+  if (query) {
+    hosts = hosts.filter(h =>
+      (h.ip        || '').includes(query) ||
+      (h.hostname  || '').toLowerCase().includes(query) ||
+      (h.vendor    || '').toLowerCase().includes(query) ||
+      (h.mac       || '').toLowerCase().includes(query) ||
+      (h.os_hint   || '').toLowerCase().includes(query)
+    );
+  }
+
+  // Sort
+  hosts.sort((a, b) => {
+    let av = a[sortField] ?? '', bv = b[sortField] ?? '';
+    if (sortField === 'ip') {
+      av = a.ip.split('.').map(n => n.padStart(3,'0')).join('');
+      bv = b.ip.split('.').map(n => n.padStart(3,'0')).join('');
+    }
+    if (sortField === 'online') { av = a.online ? 1 : 0; bv = b.online ? 1 : 0; }
+    if (av < bv) return sortAsc ? -1 : 1;
+    if (av > bv) return sortAsc ? 1 : -1;
+    return 0;
+  });
+
+  document.getElementById('host-count').textContent = `${hosts.length} host${hosts.length !== 1 ? 's' : ''}`;
+
+  const tbody = document.getElementById('host-tbody');
+  if (!hosts.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">
+      <div class="icon">🔍</div>
+      <p>No hosts found</p>
+      <small>Try a different search or trigger a scan</small>
+    </div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = hosts.map(h => {
+    const online  = h.online ? 'online' : 'offline';
+    const ports   = Array.isArray(h.open_ports) ? h.open_ports : [];
+    const portsHtml = ports.length
+      ? ports.map(p => `<span class="port-tag">${esc(p)}</span>`).join('')
+      : `<span style="color:var(--dimmer);font-size:11px">—</span>`;
+
+    const lastSeen = h.last_seen
+      ? new Date(h.last_seen).toLocaleString()
+      : '—';
+
+    return `<tr>
+      <td>
+        <div class="status-cell">
+          <span class="status-dot ${online}"></span>
+          <span class="status-text ${online}">${h.online ? 'Online' : 'Offline'}</span>
+        </div>
+      </td>
+      <td><span class="ip-cell">${esc(h.ip)}</span></td>
+      <td class="hide-xs">
+        <span class="hostname-cell ${h.hostname ? '' : 'empty'}">
+          ${esc(h.hostname || 'unresolved')}
+        </span>
+      </td>
+      <td class="hide-sm">
+        <span class="vendor-cell ${(!h.vendor || h.vendor === 'Unknown') ? 'unknown' : ''}">
+          ${esc(h.vendor || '—')}
+        </span>
+      </td>
+      <td class="hide-sm"><span class="mac-cell">${esc(h.mac || '—')}</span></td>
+      <td class="hide-xs"><div class="ports-cell">${portsHtml}</div></td>
+      <td><span class="time-cell">${lastSeen}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Controls ───────────────────────────────────────────────────────────────
+function setFilter(mode) {
+  filterMode = mode;
+  ['all','online','offline'].forEach(m => {
+    document.getElementById('btn-'+m).classList.toggle('active', m === mode);
+  });
+  renderTable();
+}
+
+function sortBy(field) {
+  if (sortField === field) { sortAsc = !sortAsc; }
+  else { sortField = field; sortAsc = field !== 'online'; }
+  ['online','ip','hostname','vendor','last_seen'].forEach(f => {
+    const th = document.getElementById('th-'+f);
+    if (th) th.classList.toggle('sorted', f === sortField);
+  });
+  renderTable();
+}
+
+async function triggerScan() {
+  const btn = document.getElementById('scan-btn');
+  btn.classList.add('scanning');
+  btn.querySelector('.label').textContent = 'Scanning…';
+  try {
+    await fetch('/api/scan', { method: 'POST' });
+    // Poll for update after a few seconds
+    setTimeout(() => { fetchData(); }, 4000);
+    setTimeout(() => {
+      btn.classList.remove('scanning');
+      btn.querySelector('.label').textContent = 'Scan Now';
+      fetchData();
+    }, 12000);
+  } catch(e) {
+    btn.classList.remove('scanning');
+    btn.querySelector('.label').textContent = 'Scan Now';
+  }
+}
+
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Auto-refresh every 30s ─────────────────────────────────────────────────
+fetchData();
+setInterval(fetchData, 30000);
+</script>
+</body>
+</html>

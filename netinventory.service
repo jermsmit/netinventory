@@ -1,0 +1,30 @@
+[Unit]
+Description=NetInventory - Home Network Scanner & Dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/netinventory
+
+# ── Tunables — edit these to match your setup ──────────────────────────────
+Environment="NETINV_SUBNET=192.168.1.0/24"
+Environment="NETINV_PORT=8080"
+Environment="NETINV_INTERVAL=300"
+Environment="NETINV_DB=/var/lib/netinventory/hosts.db"
+Environment="NETINV_LOGLEVEL=INFO"
+
+ExecStart=/usr/bin/python3 /opt/netinventory/app.py
+
+# Auto-restart on crash
+Restart=on-failure
+RestartSec=10
+
+# Logging — view with: journalctl -u netinventory -f
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=netinventory
+
+[Install]
+WantedBy=multi-user.target
