@@ -24,7 +24,7 @@ A lightweight home network scanner and inventory dashboard. Sweeps your subnet w
 ## Quick Install
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/netinventory.git
+git clone https://github.com/jermsmit/netinventory.git
 cd netinventory
 sudo bash install.sh
 ```
